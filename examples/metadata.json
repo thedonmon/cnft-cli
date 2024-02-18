@@ -1,0 +1,32 @@
+{
+    "address": "<COLLECTION_ADDRESS>",
+    "merkleTreeAddress": "<MERKLE_TREE_ADDRESS>",
+    "name": "NFT Test",
+    "description": "NFT testing",
+    "sellerFeeBasisPoints": 500,
+    "image": "https://arweave.net/8kUJ",
+    "externalUrl": "https://arweave.net/8kUJ",
+    "attributes": [
+      {
+        "trait_type": "Background",
+        "value": "Red"
+      },
+      {
+        "trait_type": "Eyes",
+        "value": "Blue"
+      },
+      {
+        "trait_type": "Mouth",
+        "value": "Smile"
+      }
+    ],
+    "creators": [
+      {
+        "address": "<CREATOR_ADDRESS>",
+        "verified": true,
+        "share": 100
+      }
+    ]
+
+
+  }
