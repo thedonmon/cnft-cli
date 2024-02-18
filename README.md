@@ -4,6 +4,11 @@
 
 Cli tool using the latest `Umi` framework from metaplex to handling minting and updating cNFTs on Solana. Still a work in progress. Please feel free to contribute!
 
+## Sources
+
+- [Umi](https://github.com/metaplex-foundation/umi/tree/main)
+- [Metaplex Docs](https://developers.metaplex.com/bubblegum)
+
 ## Install
 
 1. Install [node.js](https://nodejs.org/en/download/), [yarn](https://yarnpkg.com/getting-started/install) (or use npm).
