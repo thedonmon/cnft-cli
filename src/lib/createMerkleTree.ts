@@ -19,12 +19,8 @@ export async function createMerkleTree(
   maxDepth: number = 14,
   maxBufferSize: number = 64,
 ) {
-  if (!process.env.NFT_STORAGE_API_KEY) {
-    throw new Error('NFT_STORAGE_API_KEY is not set');
-  }
   const umi = createUmi(rpcUrl || clusterApiUrl('devnet'))
     .use(mplTokenMetadata())
-    .use(nftStorageUploader({ token: process.env.NFT_STORAGE_API_KEY }))
     .use(mplBubblegum());
   const secretKey = extractSecret(keyPair);
   const umiKeypair = umi.eddsa.createKeypairFromSecretKey(secretKey);
