@@ -6,12 +6,20 @@ import {
   generateSigner,
 } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
-import { nftStorageUploader } from '@metaplex-foundation/umi-uploader-nft-storage';
 import { clusterApiUrl } from '@solana/web3.js';
 import { extractSecret } from './helpers';
 import { extendLUT } from './manageLUT';
 import * as bs58 from 'bs58';
 
+/**
+ * Create merkle tree for cNFTs
+ * @param keyPair - Keypair to use for creating the merkle tree
+ * @param rpcUrl - RPC URL to use for creating the merkle tree
+ * @param lutAddress - Address of the LUT to extend with the merkle tree
+ * @param maxDepth - Maximum depth of the merkle tree
+ * @param maxBufferSize - Maximum buffer size of the merkle tree
+ * @returns Signature string and merkle tree address
+ */
 export async function createMerkleTree(
   keyPair: string | Uint8Array,
   rpcUrl?: string,

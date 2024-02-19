@@ -3,7 +3,6 @@ import {
   createGenericFile,
   createNoopSigner,
   createSignerFromKeypair,
-  keypairIdentity,
   none,
   publicKey,
   signerIdentity,
@@ -35,8 +34,6 @@ import {
 import {
   fetchAddressLookupTable,
   fetchAllTokenByOwnerAndMint,
-  fetchToken,
-  fetchTokensByOwner,
   transferTokensChecked,
 } from '@metaplex-foundation/mpl-toolbox';
 import { loadWalletKey, toBuffer } from './helpers';
@@ -49,6 +46,16 @@ import {
 import { TokenPayment } from '../types/tokenPayment';
 dotenv.config();
 
+/**
+ * Mint NFT
+ * @param keyPair - keypair to sign the transaction
+ * @param args  - the createNftArgs for data about the nft to be created
+ * @param collection - the collection information
+ * @param merkleTree - the merkle tree address
+ * @param rpcUrl - the rpc url. default is devnet
+ * @param lutAddress - address of the lookup table to use if provided
+ * @returns TransactionSignature
+ */
 export async function mintNft(
   keyPair: string | Uint8Array,
   args: CreateNftArgs,
@@ -91,7 +98,7 @@ export async function mintNft(
     }
   }
 
-  const nftItemJsonObject = {
+  const nftJson = {
     name: collection.name,
     symbol: collection.symbol,
     description: collection.description,
@@ -111,8 +118,8 @@ export async function mintNft(
     },
   };
 
-  const nftItemJsonUri = await umi.uploader.uploadJson(nftItemJsonObject);
-  console.log('nftItemJsonUri:', nftItemJsonUri);
+  const nftJsonUri = await umi.uploader.uploadJson(nftJson);
+  console.log('nftItemJsonUri:', nftJsonUri);
 
   let ix = mintToCollectionV1(umi, {
     leafOwner: args.mintTo ? publicKey(args.mintTo) : umiKeypair.publicKey,
@@ -120,7 +127,7 @@ export async function mintNft(
     collectionMint: publicKey(collection.address),
     metadata: {
       name: args.name,
-      uri: nftItemJsonUri,
+      uri: nftJsonUri,
       sellerFeeBasisPoints: collection.sellerFeeBasisPoints,
       collection: { key: publicKey(collection.address), verified: false },
       creators:
@@ -147,6 +154,16 @@ export async function mintNft(
   return res;
 }
 
+/**
+ * Mint NFT Transaction builder.
+ * @param keyPair - keypair to sign the transaction
+ * @param args  - the createNftArgs for data about the nft to be created
+ * @param collection - the collection information
+ * @param merkleTree - the merkle tree address
+ * @param rpcUrl - the rpc url. default is devnet
+ * @param lutAddress - address of the lookup table to use if provided
+ * @returns TranactionBuilder
+ */
 export async function mintNftIx(
   keyPair: string | Uint8Array,
   args: CreateNftArgs,
@@ -189,7 +206,7 @@ export async function mintNftIx(
     }
   }
 
-  const nftItemJsonObject = {
+  const nftJson = {
     name: collection.name,
     symbol: collection.symbol,
     description: collection.description,
@@ -209,16 +226,16 @@ export async function mintNftIx(
     },
   };
 
-  const nftItemJsonUri = await umi.uploader.uploadJson(nftItemJsonObject);
-  console.log('nftItemJsonUri:', nftItemJsonUri);
+  const nftJsonUri = await umi.uploader.uploadJson(nftJson);
+  console.log('nftJsonUri:', nftJsonUri);
 
-  const ix = mintToCollectionV1(umi, {
+  let ix = mintToCollectionV1(umi, {
     leafOwner: args.mintTo ? publicKey(args.mintTo) : umiKeypair.publicKey,
     merkleTree: merkleTreeAccount.publicKey,
     collectionMint: publicKey(collection.address),
     metadata: {
       name: args.name,
-      uri: nftItemJsonUri,
+      uri: nftJsonUri,
       sellerFeeBasisPoints: collection.sellerFeeBasisPoints,
       collection: { key: publicKey(collection.address), verified: false },
       creators:
@@ -234,7 +251,7 @@ export async function mintNftIx(
 
   if (lutAddress) {
     const lut = await fetchAddressLookupTable(umi, publicKey(lutAddress));
-    ix.setAddressLookupTables([
+    ix = ix.setAddressLookupTables([
       { publicKey: lut.publicKey, addresses: lut.addresses },
     ]);
     console.log('added lut to txn');
@@ -242,6 +259,17 @@ export async function mintNftIx(
   return ix;
 }
 
+/**
+ * This explicilty is meant for generating the transaction on the backend and returning the base64 encoded transaction to be signed and sent by the frontend
+ * @param payer - the public key of the payer
+ * @param payment - the payment object
+ * @param args - the createNftArgs for data about the nft to be created
+ * @param collection - the collection information
+ * @param merkleTree - the merkle tree address
+ * @param rpcUrl - the rpc url. default is devnet
+ * @param lutAddress - address of the lookup table to use if provided
+ * @returns base64 encoded transaction
+ */
 export async function mintNftIxTokenPayment(
   payer: string,
   payment: TokenPayment,
@@ -317,7 +345,7 @@ export async function mintNftIxTokenPayment(
     }
   }
 
-  const nftItemJsonObject = {
+  const nftJsonObject = {
     name: collection.name,
     symbol: collection.symbol,
     description: collection.description,
@@ -337,8 +365,8 @@ export async function mintNftIxTokenPayment(
     },
   };
 
-  const nftItemJsonUri = await umi.uploader.uploadJson(nftItemJsonObject);
-  console.log('nftItemJsonUri:', nftItemJsonUri);
+  const nftJsonUri = await umi.uploader.uploadJson(nftJsonObject);
+  console.log('nftJsonUri:', nftJsonUri);
 
   let ix = mintToCollectionV1(umi, {
     leafOwner: args.mintTo
@@ -350,7 +378,7 @@ export async function mintNftIxTokenPayment(
     collectionAuthority: collectionSigner,
     metadata: {
       name: args.name,
-      uri: nftItemJsonUri,
+      uri: nftJsonUri,
       sellerFeeBasisPoints: collection.sellerFeeBasisPoints,
       collection: { key: publicKey(collection.address), verified: false },
       creators:

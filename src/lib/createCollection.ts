@@ -19,6 +19,15 @@ import * as dotenv from 'dotenv';
 import { extendLUT } from './manageLUT';
 dotenv.config();
 
+/**
+ * Create a new collection
+ * @param keyPair - Keypair to use for creating the collection
+ * @param args - Arguments for creating the collection
+ * @param imageFilePath - Path to the image file for the collection
+ * @param rpcUrl - RPC URL to use for creating the collection
+ * @param lutAddress - Address of the LUT to extend with the collection
+ * @returns Signature string and collection mint address
+ */
 export async function createCollection(
   keyPair: string | Uint8Array,
   args: CreateCollectionArgs,

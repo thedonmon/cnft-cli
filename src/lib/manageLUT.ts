@@ -19,6 +19,12 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { clusterApiUrl } from '@solana/web3.js';
 import * as bs58 from 'bs58';
 
+/**
+ * Create a Lookup Table (LUT)
+ * @param keyPair - Keypair to use for creating the LUT
+ * @param rpcUrl - RPC URL to use for creating the LUT
+ * @returns LUT address and transaction signature
+ */
 export async function createLUT(keyPair: string | Uint8Array, rpcUrl?: string) {
   const umi = createUmi(rpcUrl || clusterApiUrl('devnet'));
   //check if keypair is string, if so convert to Uint8Array
@@ -38,9 +44,16 @@ export async function createLUT(keyPair: string | Uint8Array, rpcUrl?: string) {
   return {
     lutAddress: lutAddress,
     transactionSignature: res,
+    slot: slot,
   };
 }
-
+/**
+ * Create a Lookup Table (LUT) with addresses
+ * @param keyPair - Keypair to use for creating the LUT
+ * @param addresses - Addresses to add to the LUT
+ * @param rpcUrl - RPC URL to use for creating the LUT
+ * @returns LUT address and transaction signature
+ */
 export async function createLUTWithAddresses(
   keyPair: string | Uint8Array,
   addresses: string[],
@@ -69,9 +82,15 @@ export async function createLUTWithAddresses(
   return {
     lutAddress: lutAddress,
     transactionSignature: res,
+    slot: slot,
   };
 }
-
+/**
+ * Create a Lookup Table (LUT) using common cNFT addresses
+ * @param keyPair - Keypair to use for creating the LUT
+ * @param rpcUrl - RPC URL to use for creating the LUT
+ * @returns LUT address and transaction signature
+ */
 export async function createCnftLUT(
   keyPair: string | Uint8Array,
   rpcUrl?: string,
@@ -85,6 +104,15 @@ export async function createCnftLUT(
   return createLUTWithAddresses(keyPair, addresses, rpcUrl);
 }
 
+/**
+ * Extend an existing Lookup Table (LUT)
+ * @param keyPair - Keypair to use for extending the LUT
+ * @param addresses - Addresses to add to the LUT
+ * @param rpcUrl - RPC URL to use for extending the LUT
+ * @param lut - Lut address if existing will use that to extend
+ * @param slot - slot, if existing will use that to look up the lut and extend.
+ * @returns lutAddress
+ */
 export async function extendLUT(
   keyPair: string | Uint8Array,
   addresses: string[],

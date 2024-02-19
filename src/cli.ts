@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import ora, { oraPromise } from 'ora';
 import { Command, Option } from '@commander-js/extra-typings';
 import * as fs from 'fs';
-import { loadWalletKey, uiToNative } from './lib/helpers';
+import { loadWalletKey, uiToNative, writeToFile } from './lib/helpers';
 import {
   createCnftLUT,
   createLUT,
@@ -47,11 +47,12 @@ programCommand('createLUT', { requireWallet: true })
     ),
   )
   .addOption(
-    new Option('-cnft, --cnft', 'Create a CNFT LUT')
+    new Option('-cnft, --cnft <boolean>', 'Create a CNFT LUT')
       .argParser((val) => {
-        if (val) {
+        if (val && val === 'true') {
           return true;
         }
+        return false;
       })
       .default(false),
   )
@@ -141,6 +142,7 @@ programCommand('createCollection')
       opts.lut,
     );
     ora(`Collection created at: ${res.collectionMint}`).succeed();
+    writeToFile(res, `collection-${res.collectionMint}.json`);
   });
 
 programCommand('createMerkleTree', { requireWallet: true })
@@ -168,6 +170,7 @@ programCommand('createMerkleTree', { requireWallet: true })
     ora(
       `Merkle Tree created at: ${res.merkleTreeAddress}. Signature: ${res.signature}`,
     ).succeed();
+    writeToFile(res, `merkleTree-${res.merkleTreeAddress}.json`);
   });
 
 programCommand('mintNftTokenPayment', { requireWallet: true })
@@ -263,6 +266,7 @@ programCommand('mintNftTokenPayment', { requireWallet: true })
 
     const signature = await connection.sendTransaction(txn);
     ora(`NFT minted! Signature: ${signature}`).succeed();
+    writeToFile({ signature }, `nft-${signature}.json`);
   });
 
 function programCommand(
@@ -282,7 +286,17 @@ function programCommand(
         `Solana wallet location`,
       ).makeOptionMandatory(options.requireWallet),
     )
-    .addOption(new Option('-r, --rpc <string>', `RPC URL`));
+    .addOption(new Option('-r, --rpc <string>', `RPC URL`))
+    .addOption(
+      new Option('-lf, --log <boolean>', `Write output to file`)
+        .argParser((val) => {
+          if (val && val === 'true') {
+            return true;
+          }
+          return false;
+        })
+        .default(true),
+    );
   return cmProgram;
 }
 

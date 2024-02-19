@@ -8,7 +8,11 @@ export function extractSecret(keyPair: string | Uint8Array) {
   return typeof keyPair === 'string' ? bs58.decode(keyPair) : keyPair;
 }
 
-function writeToFile(data: any, path: string, jsonFormat: boolean = true) {
+export function writeToFile(
+  data: any,
+  path: string,
+  jsonFormat: boolean = true,
+) {
   const dir = './out';
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
