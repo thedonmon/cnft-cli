@@ -18,10 +18,7 @@ Cli tool using the latest `Umi` framework from metaplex to handling minting and 
 ## Build & Run
 
 1. Copy the contents of the `.env.example` file to a `.env` next to it, and edit it with your values.
-2. Run `yarn build` or `npm build` to build the files.
-3. Run `yarn start` or `npm start` to start the application.
-
--   You can run `yarn dev` or `npm dev` to combine the 2 steps above, while listening to changes and restarting automatically.
+2. Run `yarn cli <cmdname> -args`
 
 ## Run with Docker
 
