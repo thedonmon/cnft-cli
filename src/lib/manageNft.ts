@@ -27,6 +27,7 @@ import * as dotenv from 'dotenv';
 import {
   UpdateArgsArgs,
   fetchMerkleTree,
+  findLeafAssetIdPda,
   getAssetWithProof,
   mintToCollectionV1,
   updateMetadata,
@@ -44,6 +45,7 @@ import {
   toWeb3JsPublicKey,
 } from '@metaplex-foundation/umi-web3js-adapters';
 import { TokenPayment } from '../types/tokenPayment';
+import { fetchWithAutoPagination } from '../types/das';
 dotenv.config();
 
 /**
@@ -306,7 +308,9 @@ export async function mintNftIxTokenPayment(
       tokenStrategy: 'getTokenAccountsByOwner',
     },
   );
-
+  if (toTokenFetch.length < 1) {
+    throw new Error('No token account found for the receiver');
+  }
   const fromTokenFetch = await fetchAllTokenByOwnerAndMint(
     umi,
     publicKey(payment.from),
@@ -315,6 +319,9 @@ export async function mintNftIxTokenPayment(
       tokenStrategy: 'getTokenAccountsByOwner',
     },
   );
+  if (fromTokenFetch.length < 1) {
+    throw new Error('No token account found for the payer');
+  }
   const transferIx = transferTokensChecked(umi, {
     source: fromTokenFetch[0].publicKey,
     destination: toTokenFetch[0].publicKey,
@@ -461,4 +468,79 @@ export async function updateNft(
   }
   const res = await ix.sendAndConfirm(umi);
   return res;
+}
+
+export async function fetchCnftsByCollection(
+  collection: string,
+  rpcUrl?: string,
+  paginate: boolean = true,
+) {
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'));
+  const assets = await fetchWithAutoPagination(
+    umi.rpc.getAssetsByGroup,
+    {
+      groupKey: 'collection',
+      groupValue: collection,
+    },
+    paginate,
+  );
+  return assets;
+}
+
+export async function fetchCnftsByOwner(
+  owner: string,
+  collectionAddress?: string,
+  rpcUrl?: string,
+  paginate: boolean = true,
+) {
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'));
+  const ownerKey = publicKey(owner);
+  let { items } = await fetchWithAutoPagination(
+    umi.rpc.getAssetsByOwner,
+    {
+      owner: ownerKey,
+    },
+    paginate,
+  );
+
+  if (collectionAddress) {
+    const filtered = items.filter((asset) =>
+      asset.grouping.find(
+        (group) =>
+          group.group_key === 'collection' &&
+          group.group_value === collectionAddress,
+      ),
+    );
+    items = filtered;
+  }
+  return items;
+}
+
+export async function fetchCnftByAssetId(
+  assetId: string,
+  rpcUrl?: string,
+  withProof: boolean = false,
+) {
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'));
+  const asset = withProof
+    ? await getAssetWithProof(umi, publicKey(assetId))
+    : await umi.rpc.getAsset(publicKey(assetId));
+  return asset;
+}
+
+export async function fetchCnftByTreeAndLeaf(
+  tree: string,
+  leaf: number | bigint,
+  rpcUrl?: string,
+  withProof: boolean = false,
+) {
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'));
+  const [assetId, _] = findLeafAssetIdPda(umi, {
+    merkleTree: publicKey(tree),
+    leafIndex: leaf,
+  });
+  const asset = withProof
+    ? await getAssetWithProof(umi, publicKey(assetId))
+    : await umi.rpc.getAsset(publicKey(assetId));
+  return asset;
 }
