@@ -257,6 +257,8 @@ programCommand('mintNftTokenPayment', { requireWallet: true })
       name: opts.config.name,
       description: opts.config.description,
       externalUrl: opts.config.externalUrl,
+      primarySaleHappened: opts.config.primarySaleHappened,
+      verified: opts.config.verified,
     };
     const res = await mintNftIxTokenPayment(
       payer.publicKey.toBase58(),
@@ -307,7 +309,7 @@ programCommand('fetchCnft', { requireWallet: false })
   .action(async (opts) => {
     try {
       if (opts.assetId) {
-        const res = oraPromise(
+        const res = await oraPromise(
           fetchCnftByAssetId(opts.assetId, opts.rpc, opts.withProof),
           {
             text: `Fetching CNFT with assetId: ${opts.assetId}...`,
@@ -319,7 +321,7 @@ programCommand('fetchCnft', { requireWallet: false })
         ora(success(`${JSON.stringify(res, null, 2)}`)).succeed();
         writeToFile(res, `cnft-${opts.assetId}.json`);
       } else if (opts.merkleTree && opts.leafIndex) {
-        const res = oraPromise(
+        const res = await oraPromise(
           fetchCnftByTreeAndLeaf(
             opts.merkleTree,
             opts.leafIndex,
@@ -334,9 +336,10 @@ programCommand('fetchCnft', { requireWallet: false })
           },
         );
         ora(success(`${JSON.stringify(res, null, 2)}`)).succeed();
-        writeToFile(res, `cnft-${opts.assetId}.json`);
+        writeToFile(res, `cnft-${opts.merkleTree}-${opts.leafIndex}.json`);
       }
     } catch (error) {
+      console.log(error);
       ora(`Error: ${error}`).fail();
     }
   });
@@ -368,7 +371,7 @@ programCommand('fetchCnfts', { requireWallet: false })
   .action(async (opts) => {
     try {
       if (opts.collection && !opts.owner) {
-        const res = oraPromise(
+        const res = await oraPromise(
           fetchCnftsByCollection(opts.collection, opts.rpc, opts.paginate),
           {
             text: `Fetching CNFTs for collection: ${opts.collection}...`,
@@ -379,7 +382,7 @@ programCommand('fetchCnfts', { requireWallet: false })
         );
         writeToFile(res, `cnfts-collection${opts.collection}.json`);
       } else if (opts.collection && opts.owner) {
-        const res = oraPromise(
+        const res = await oraPromise(
           fetchCnftsByOwner(
             opts.owner,
             opts.collection,
@@ -399,7 +402,7 @@ programCommand('fetchCnfts', { requireWallet: false })
           `cnft-collection-${opts.collection}-${opts.owner}.json`,
         );
       } else if (opts.owner && !opts.collection) {
-        const res = oraPromise(
+        const res = await oraPromise(
           fetchCnftsByOwner(opts.owner, undefined, opts.rpc, opts.paginate),
           {
             text: `Fetching CNFTs for owner: ${opts.owner}...`,

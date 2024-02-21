@@ -13,6 +13,8 @@ export type NftCollection = {
   symbol: string;
   description?: string;
   sellerFeeBasisPoints: number;
+  primarySaleHappened?: boolean;
+  verified?: boolean;
   externalUrl?: string;
 };
 
@@ -23,6 +25,8 @@ export type MetadataConfig = {
   symbol: string;
   description?: string;
   sellerFeeBasisPoints: number;
+  primarySaleHappened?: boolean;
+  verified?: boolean;
   externalUrl?: string;
   creators?: Creator[];
   attributes?: Attribute[];

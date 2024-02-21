@@ -1,6 +1,8 @@
 {
     "address": "<COLLECTION_ADDRESS>",
     "merkleTreeAddress": "<MERKLE_TREE_ADDRESS>",
+    "primarySaleHappened": false,
+    "verified": true,
     "name": "NFT Test",
     "description": "NFT testing",
     "sellerFeeBasisPoints": 500,

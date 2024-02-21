@@ -25,6 +25,7 @@ import {
 import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 import {
+  MPL_BUBBLEGUM_PROGRAM_ID,
   UpdateArgsArgs,
   fetchMerkleTree,
   findLeafAssetIdPda,
@@ -46,6 +47,8 @@ import {
 } from '@metaplex-foundation/umi-web3js-adapters';
 import { TokenPayment } from '../types/tokenPayment';
 import { fetchWithAutoPagination } from '../types/das';
+import { dasApi } from '@metaplex-foundation/digital-asset-standard-api';
+
 dotenv.config();
 
 /**
@@ -383,11 +386,16 @@ export async function mintNftIxTokenPayment(
     merkleTree: merkleTreeAccount.publicKey,
     collectionMint: publicKey(collection.address),
     collectionAuthority: collectionSigner,
+    collectionAuthorityRecordPda: MPL_BUBBLEGUM_PROGRAM_ID,
     metadata: {
       name: args.name,
       uri: nftJsonUri,
       sellerFeeBasisPoints: collection.sellerFeeBasisPoints,
-      collection: { key: publicKey(collection.address), verified: false },
+      primarySaleHappened: collection.primarySaleHappened,
+      collection: {
+        key: publicKey(collection.address),
+        verified: collection.verified ?? false,
+      },
       creators:
         args.creators?.map((creator) => {
           return {
@@ -475,7 +483,7 @@ export async function fetchCnftsByCollection(
   rpcUrl?: string,
   paginate: boolean = true,
 ) {
-  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'));
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet')).use(dasApi());
   const assets = await fetchWithAutoPagination(
     umi.rpc.getAssetsByGroup,
     {
@@ -493,7 +501,7 @@ export async function fetchCnftsByOwner(
   rpcUrl?: string,
   paginate: boolean = true,
 ) {
-  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'));
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet')).use(dasApi());
   const ownerKey = publicKey(owner);
   let { items } = await fetchWithAutoPagination(
     umi.rpc.getAssetsByOwner,
@@ -521,7 +529,7 @@ export async function fetchCnftByAssetId(
   rpcUrl?: string,
   withProof: boolean = false,
 ) {
-  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'));
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet')).use(dasApi());
   const asset = withProof
     ? await getAssetWithProof(umi, publicKey(assetId))
     : await umi.rpc.getAsset(publicKey(assetId));
@@ -534,7 +542,7 @@ export async function fetchCnftByTreeAndLeaf(
   rpcUrl?: string,
   withProof: boolean = false,
 ) {
-  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'));
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet')).use(dasApi());
   const [assetId, _] = findLeafAssetIdPda(umi, {
     merkleTree: publicKey(tree),
     leafIndex: leaf,
