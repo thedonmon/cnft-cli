@@ -47,7 +47,10 @@ import {
 } from '@metaplex-foundation/umi-web3js-adapters';
 import { TokenPayment } from '../types/tokenPayment';
 import { fetchWithAutoPagination } from '../types/das';
-import { dasApi } from '@metaplex-foundation/digital-asset-standard-api';
+import {
+  SearchAssetsRpcInput,
+  dasApi,
+} from '@metaplex-foundation/digital-asset-standard-api';
 
 dotenv.config();
 
@@ -524,6 +527,45 @@ export async function fetchCnftsByOwner(
     );
     items = filtered;
   }
+  return items;
+}
+
+export async function searchCnfts(
+  owner?: string,
+  collectionAddress?: string,
+  compressed = true,
+  rpcUrl?: string,
+  paginate: boolean = true,
+) {
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet')).use(dasApi());
+  if (!owner && !collectionAddress) {
+    throw new Error('Owner or CollectionAddress must be provided');
+  }
+  let searchAssetRequest: SearchAssetsRpcInput = {
+    compressed,
+  };
+  if (owner && collectionAddress) {
+    searchAssetRequest = {
+      ...searchAssetRequest,
+      owner: publicKey(owner),
+      grouping: ['collection', collectionAddress],
+    };
+  } else if (owner && !collectionAddress) {
+    searchAssetRequest = {
+      ...searchAssetRequest,
+      owner: publicKey(owner),
+    };
+  } else {
+    searchAssetRequest = {
+      ...searchAssetRequest,
+      grouping: ['collection', collectionAddress],
+    };
+  }
+  const { items } = await fetchWithAutoPagination(
+    umi.rpc.searchAssets,
+    searchAssetRequest,
+    paginate,
+  );
   return items;
 }
 

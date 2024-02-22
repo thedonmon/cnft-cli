@@ -20,7 +20,7 @@ export async function fetchWithAutoPagination<T, R>(
   pageLimit: number = 1000,
 ): Promise<{ items: R[] }> {
   let allItems: R[] = [];
-  let page = 0;
+  let page = 1;
   let hasMore = true;
   let response: { items: R[] } = { items: [] };
 

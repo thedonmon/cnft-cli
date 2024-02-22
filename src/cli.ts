@@ -22,8 +22,8 @@ import {
   fetchCnftByTreeAndLeaf,
   fetchCnftsByCollection,
   fetchCnftsByOwner,
-  mintNft,
   mintNftIxTokenPayment,
+  searchCnfts,
 } from 'lib/manageNft';
 import { TokenPayment } from 'types/tokenPayment';
 import {
@@ -53,16 +53,7 @@ programCommand('createLUT', { requireWallet: true })
       (val) => JSON.parse(fs.readFileSync(val, 'utf-8')) as string[],
     ),
   )
-  .addOption(
-    new Option('-cnft, --cnft <boolean>', 'Create a CNFT LUT')
-      .argParser((val) => {
-        if (val && val === 'true') {
-          return true;
-        }
-        return false;
-      })
-      .default(false),
-  )
+  .option('--cnft', 'Create a CNFT LUT')
   .action(async (opts) => {
     const keypair = loadWalletKey(opts.keypair);
     if (opts.addresses && opts.cnft) {
@@ -278,22 +269,10 @@ programCommand('mintNftTokenPayment', { requireWallet: true })
     writeToFile({ signature }, `nft-${signature}.json`);
   });
 
-programCommand('fetchCnft', { requireWallet: false })
+programCommand('fetchSingle', { requireWallet: false })
   .description('Fetch a CNFT')
   .addOption(new Option('-a, --assetId <string>', 'AssetId of the CNFT'))
-  .addOption(
-    new Option(
-      '-wp, --withProof <boolean>',
-      'Return the result with proof or not',
-    )
-      .argParser((val) => {
-        if (val && val === 'true') {
-          return true;
-        }
-        return false;
-      })
-      .default(false),
-  )
+  .option('--no-proof', 'Exclude proof')
   .addOption(
     new Option(
       '-mt, --merkleTree <string>',
@@ -310,7 +289,7 @@ programCommand('fetchCnft', { requireWallet: false })
     try {
       if (opts.assetId) {
         const res = await oraPromise(
-          fetchCnftByAssetId(opts.assetId, opts.rpc, opts.withProof),
+          fetchCnftByAssetId(opts.assetId, opts.rpc, opts.proof),
           {
             text: `Fetching CNFT with assetId: ${opts.assetId}...`,
             spinner: 'binary',
@@ -326,7 +305,7 @@ programCommand('fetchCnft', { requireWallet: false })
             opts.merkleTree,
             opts.leafIndex,
             opts.rpc,
-            opts.withProof,
+            opts.proof,
           ),
           {
             text: `Fetching CNFT with tree and leaf: ${opts.merkleTree} ${opts.leafIndex}...`,
@@ -355,19 +334,7 @@ programCommand('fetchCnfts', { requireWallet: false })
       'Address of owner to fetch CNFTs. Optional if collection is provided. If both are provided, results will by filtered for owner by collection.',
     ),
   )
-  .addOption(
-    new Option(
-      '-p, --paginate <boolean>',
-      'Autopaginate results. Fetches all results if true',
-    )
-      .argParser((val) => {
-        if (val && val === 'true') {
-          return true;
-        }
-        return false;
-      })
-      .default(false),
-  )
+  .option('--no-paginate', 'Do not paginate all results. Returns 1000 max.')
   .action(async (opts) => {
     try {
       if (opts.collection && !opts.owner) {
@@ -415,6 +382,43 @@ programCommand('fetchCnfts', { requireWallet: false })
       } else {
         ora(`No collection or owner provided`).fail();
       }
+    } catch (error) {
+      ora(`Error: ${error}`).fail();
+    }
+  });
+
+programCommand('search', { requireWallet: false })
+  .description('Search CNFTs by collection or owner')
+  .addOption(
+    new Option('-co, --collection <string>', 'Collection Address of the CNFT'),
+  )
+  .addOption(
+    new Option(
+      '-ow, --owner <string>',
+      'Address of owner to fetch CNFTs. Optional if collection is provided. If both are provided, results will by filtered for owner by collection.',
+    ),
+  )
+  .option('--no-paginate', 'Do not paginate all results. Returns 1000 max.')
+  .option('--no-compressed', 'Search non-compressed assets')
+  .action(async (opts) => {
+    try {
+      const res = await oraPromise(
+        searchCnfts(
+          opts.owner,
+          opts.collection,
+          opts.compressed,
+          opts.rpc,
+          opts.paginate,
+        ),
+        {
+          text: `Fetching CNFTs...`,
+          spinner: 'binary',
+          successText: success(`CNFTs found!`),
+          failText: error(`CNFTs not found!`),
+        },
+      );
+      const fileName = `cnfts-search-${opts.collection && opts.owner ? `c-${opts.collection}-o${opts.owner}` : opts.collection ?? opts.owner}.json`;
+      writeToFile(res, fileName);
     } catch (error) {
       ora(`Error: ${error}`).fail();
     }
