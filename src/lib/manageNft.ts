@@ -417,6 +417,9 @@ export async function mintNftIxTokenPayment(
   }
 
   console.log('fits?', ix.fitsInOneTransaction(umi));
+  //ix.build().serializedMessage does not deserialize properly to a versioned txn as it expects all signatures
+  //Build a versioned transaction from the umi instructions and sign it with auth while requiring the feepayers signature
+  //Serialize and expect frontend to sign it.
   const mappedIx = ix.getInstructions().map(toWeb3JsInstruction);
   const latestBlock = await umi.rpc.getLatestBlockhash();
   const connection = new Connection(rpcUrl || clusterApiUrl('devnet'));
