@@ -11,15 +11,21 @@ export function extractSecret(keyPair: string | Uint8Array) {
 export function writeToFile(
   data: any,
   path: string,
-  jsonFormat: boolean = true,
+  options: { jsonFormat?: boolean; writeToFile?: boolean } = {
+    jsonFormat: true,
+    writeToFile: true,
+  },
 ) {
   const dir = './out';
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
   }
+  if (!options.writeToFile) {
+    return;
+  }
   fs.writeFileSync(
     `${dir}/${path}`,
-    jsonFormat ? JSON.stringify(data, null, 2) : data,
+    options.jsonFormat ? JSON.stringify(data, null, 2) : data,
   );
   ora(`Data saved to ${dir}/${path}`).succeed();
 }

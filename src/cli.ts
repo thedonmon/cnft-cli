@@ -140,7 +140,9 @@ programCommand('createCollection')
       opts.lut,
     );
     ora(`Collection created at: ${res.collectionMint}`).succeed();
-    writeToFile(res, `collection-${res.collectionMint}.json`);
+    writeToFile(res, `collection-${res.collectionMint}.json`, {
+      writeToFile: opts.log,
+    });
   });
 
 programCommand('createMerkleTree', { requireWallet: true })
@@ -168,7 +170,9 @@ programCommand('createMerkleTree', { requireWallet: true })
     ora(
       `Merkle Tree created at: ${res.merkleTreeAddress}. Signature: ${res.signature}`,
     ).succeed();
-    writeToFile(res, `merkleTree-${res.merkleTreeAddress}.json`);
+    writeToFile(res, `merkleTree-${res.merkleTreeAddress}.json`, {
+      writeToFile: opts.log,
+    });
   });
 
 programCommand('mintNftTokenPayment', { requireWallet: true })
@@ -266,7 +270,9 @@ programCommand('mintNftTokenPayment', { requireWallet: true })
 
     const signature = await connection.sendTransaction(txn);
     ora(`NFT minted! Signature: ${signature}`).succeed();
-    writeToFile({ signature }, `nft-${signature}.json`);
+    writeToFile({ signature }, `nft-${signature}.json`, {
+      writeToFile: opts.log,
+    });
   });
 
 programCommand('fetchSingle', { requireWallet: false })
@@ -315,7 +321,9 @@ programCommand('fetchSingle', { requireWallet: false })
           },
         );
         ora(success(`${JSON.stringify(res, null, 2)}`)).succeed();
-        writeToFile(res, `cnft-${opts.merkleTree}-${opts.leafIndex}.json`);
+        writeToFile(res, `cnft-${opts.merkleTree}-${opts.leafIndex}.json`, {
+          writeToFile: opts.log,
+        });
       }
     } catch (error) {
       console.log(error);
@@ -367,6 +375,7 @@ programCommand('fetchCnfts', { requireWallet: false })
         writeToFile(
           res,
           `cnft-collection-${opts.collection}-${opts.owner}.json`,
+          { writeToFile: opts.log },
         );
       } else if (opts.owner && !opts.collection) {
         const res = await oraPromise(
@@ -378,7 +387,9 @@ programCommand('fetchCnfts', { requireWallet: false })
             failText: error(`CNFTs not found!`),
           },
         );
-        writeToFile(res, `cnfts-owner-${opts.owner}.json`);
+        writeToFile(res, `cnfts-owner-${opts.owner}.json`, {
+          writeToFile: opts.log,
+        });
       } else {
         ora(`No collection or owner provided`).fail();
       }
@@ -418,7 +429,7 @@ programCommand('search', { requireWallet: false })
         },
       );
       const fileName = `cnfts-search-${opts.collection && opts.owner ? `c-${opts.collection}-o${opts.owner}` : opts.collection ?? opts.owner}.json`;
-      writeToFile(res, fileName);
+      writeToFile(res, fileName, { writeToFile: opts.log });
     } catch (error) {
       ora(`Error: ${error}`).fail();
     }
@@ -442,16 +453,7 @@ function programCommand(
       ).makeOptionMandatory(options.requireWallet),
     )
     .addOption(new Option('-r, --rpc <string>', `RPC URL`))
-    .addOption(
-      new Option('-lf, --log <boolean>', `Write output to file`)
-        .argParser((val) => {
-          if (val && val === 'true') {
-            return true;
-          }
-          return false;
-        })
-        .default(true),
-    );
+    .option('--no-log', 'Do not log the result to a file');
   return cmProgram;
 }
 
