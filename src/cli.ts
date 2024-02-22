@@ -39,6 +39,7 @@ import { confirm } from '@inquirer/prompts';
 const error = chalk.bold.red;
 const success = chalk.bold.greenBright;
 const warning = chalk.hex('#FFA500');
+const magentaB = chalk.magentaBright;
 const cliProgram = new Command();
 
 cliProgram
@@ -72,15 +73,15 @@ programCommand('createLUT', { requireWallet: true })
         opts.addresses,
         opts.rpc,
       );
-      ora(`LUT created at: ${res.lutAddress}`).succeed();
+      ora(`LUT created at: ${magentaB(res.lutAddress)}`).succeed();
       return;
     } else if (!opts.addresses && opts.cnft) {
       const res = await createCnftLUT(keypair.secretKey, opts.rpc);
-      ora(`LUT created at: ${res.lutAddress.toString()}`).succeed();
+      ora(`LUT created at: ${magentaB(res.lutAddress.toString())}`).succeed();
       return;
     } else {
       const res = await createLUT(keypair.secretKey, opts.rpc);
-      ora(`LUT created at: ${res.lutAddress.toString()}`).succeed();
+      ora(`LUT created at: ${magentaB(res.lutAddress.toString())}`).succeed();
       return;
     }
   });
@@ -107,7 +108,7 @@ programCommand('extendLUT', { requireWallet: true })
       opts.lut || undefined,
       opts.slot || undefined,
     );
-    ora(`LUT extended at: ${opts.lut}`).succeed();
+    ora(`LUT extended at: ${magentaB(opts.lut)}`).succeed();
   });
 
 programCommand('createCollection')
@@ -139,7 +140,7 @@ programCommand('createCollection')
       opts.rpc,
       opts.lut,
     );
-    ora(`Collection created at: ${res.collectionMint}`).succeed();
+    ora(`Collection created at: ${magentaB(res.collectionMint)}`).succeed();
     writeToFile(res, `collection-${res.collectionMint}.json`, {
       writeToFile: opts.log,
     });
@@ -168,7 +169,7 @@ programCommand('createMerkleTree', { requireWallet: true })
       opts.maxBuffer,
     );
     ora(
-      `Merkle Tree created at: ${res.merkleTreeAddress}. Signature: ${res.signature}`,
+      `Merkle Tree created at: ${magentaB(res.merkleTreeAddress)}. Signature: ${success(res.signature)}`,
     ).succeed();
     writeToFile(res, `merkleTree-${res.merkleTreeAddress}.json`, {
       writeToFile: opts.log,
@@ -269,7 +270,7 @@ programCommand('mintNftTokenPayment', { requireWallet: true })
     txn.sign([payer]);
 
     const signature = await connection.sendTransaction(txn);
-    ora(`NFT minted! Signature: ${signature}`).succeed();
+    ora(`NFT minted! Signature: ${magentaB(signature)}`).succeed();
     writeToFile({ signature }, `nft-${signature}.json`, {
       writeToFile: opts.log,
     });
@@ -320,7 +321,7 @@ programCommand('fetchSingle', { requireWallet: false })
             failText: error(`CNFT not found!`),
           },
         );
-        ora(success(`${JSON.stringify(res, null, 2)}`)).succeed();
+        ora(magentaB(`${JSON.stringify(res, null, 2)}`)).succeed();
         writeToFile(res, `cnft-${opts.merkleTree}-${opts.leafIndex}.json`, {
           writeToFile: opts.log,
         });
@@ -371,7 +372,7 @@ programCommand('fetchCnfts', { requireWallet: false })
             failText: error(`CNFTs not found!`),
           },
         );
-        ora(success(`${JSON.stringify(res, null, 2)}`)).succeed();
+        ora(magentaB(`${JSON.stringify(res, null, 2)}`)).succeed();
         writeToFile(
           res,
           `cnft-collection-${opts.collection}-${opts.owner}.json`,
