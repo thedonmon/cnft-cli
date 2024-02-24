@@ -14,6 +14,7 @@ import {
   CreateNftArgs,
   MetadataConfig,
   NftCollection,
+  UpdateNftArgs,
 } from './types/collection';
 import { createCollection } from './lib/createCollection';
 import { createMerkleTree } from './lib/createMerkleTree';
@@ -24,6 +25,7 @@ import {
   fetchCnftsByOwner,
   mintNftIxTokenPayment,
   searchCnfts,
+  updateNft,
 } from 'lib/manageNft';
 import { TokenPayment } from 'types/tokenPayment';
 import {
@@ -271,7 +273,37 @@ programCommand('mintNftTokenPayment', { requireWallet: true })
 
     const signature = await connection.sendTransaction(txn);
     ora(`NFT minted! Signature: ${magentaB(signature)}`).succeed();
-    writeToFile({ signature }, `nft-${signature}.json`, {
+
+    writeToFile(res, `nfts-${signature}.json`, {
+      writeToFile: opts.log,
+    });
+  });
+
+programCommand('updateNft', { requireWallet: true })
+  .description('Update an NFT')
+  .addOption(new Option('-a, --assetId <string>', 'AssetId of the CNFT'))
+  .addOption(new Option('-n, --name <string>', 'Name of the CNFT'))
+  .addOption(new Option('-u, --uri <string>', 'URI of the CNFT'))
+  .addOption(
+    new Option('-co, --collection <string>', 'Collection mint of the CNFT'),
+  )
+  .addOption(new Option('-l, --lut <string>', 'LUT address'))
+  .action(async (opts) => {
+    const keypair = loadWalletKey(opts.keypair);
+    const updateArgs: UpdateNftArgs = {
+      assetId: opts.assetId,
+      uri: opts.uri,
+      name: opts.name,
+    };
+    const res = await updateNft(
+      keypair.secretKey,
+      updateArgs,
+      opts.collection,
+      opts.lut,
+      opts.rpc,
+    );
+    ora(`NFT updated!`).succeed();
+    writeToFile(res, `nft-${opts.assetId}.json`, {
       writeToFile: opts.log,
     });
   });

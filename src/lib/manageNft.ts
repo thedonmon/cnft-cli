@@ -51,6 +51,7 @@ import {
   SearchAssetsRpcInput,
   dasApi,
 } from '@metaplex-foundation/digital-asset-standard-api';
+import { createCnftLUT, extendLUT } from './manageLUT';
 
 dotenv.config();
 
@@ -449,12 +450,9 @@ export async function updateNft(
   lutAddress?: string,
   rpcUrl?: string,
 ) {
-  if (!process.env.NFT_STORAGE_API_KEY) {
-    throw new Error('NFT_STORAGE_API_KEY is not set');
-  }
   const umi = createUmi(rpcUrl || clusterApiUrl('devnet'))
     .use(mplTokenMetadata())
-    .use(nftStorageUploader({ token: process.env.NFT_STORAGE_API_KEY }));
+    .use(dasApi());
   //check if keypair is string, if so convert to Uint8Array
   const keypair = typeof keyPair === 'string' ? bs58.decode(keyPair) : keyPair;
   const umiKeypair = umi.eddsa.createKeypairFromSecretKey(keypair);
@@ -480,8 +478,16 @@ export async function updateNft(
     ]);
     console.log('added lut to txn');
   }
-  const res = await ix.sendAndConfirm(umi);
-  return res;
+  console.log(ix.fitsInOneTransaction(umi));
+  const res = await ix.sendAndConfirm(umi, {
+    send: {
+      skipPreflight: true,
+    },
+  });
+  return {
+    ...res,
+    signaure: bs58.encode(res.signature),
+  };
 }
 
 export async function fetchCnftsByCollection(

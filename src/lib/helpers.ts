@@ -11,11 +11,15 @@ export function extractSecret(keyPair: string | Uint8Array) {
 export function writeToFile(
   data: any,
   path: string,
-  options: { jsonFormat?: boolean; writeToFile?: boolean } = {
+  providedOptions: { jsonFormat?: boolean; writeToFile?: boolean } = {},
+) {
+  const defaultOptions = {
     jsonFormat: true,
     writeToFile: true,
-  },
-) {
+  };
+
+  // Merge provided options with default options
+  const options = { ...defaultOptions, ...providedOptions };
   const dir = './out';
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
@@ -23,10 +27,8 @@ export function writeToFile(
   if (!options.writeToFile) {
     return;
   }
-  fs.writeFileSync(
-    `${dir}/${path}`,
-    options.jsonFormat ? JSON.stringify(data, null, 2) : data,
-  );
+  const dataToWrite = options.jsonFormat ? JSON.stringify(data, null, 2) : data;
+  fs.writeFileSync(`${dir}/${path}`, dataToWrite);
   ora(`Data saved to ${dir}/${path}`).succeed();
 }
 
@@ -90,4 +92,12 @@ export function nativeToUiNumber(
 ): number {
   const amt = toBigNumber(amount);
   return amt.div(10 ** decimals).toNumber();
+}
+
+export function estimateTransactionSize(
+  serializedTxn: Uint8Array,
+  signaturesLength: number,
+): number {
+  const size = serializedTxn.length + 1 + signaturesLength * 64;
+  return size;
 }
