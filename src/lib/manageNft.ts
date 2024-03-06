@@ -119,7 +119,7 @@ export async function mintNft(
       category: 'image',
       files: [
         {
-          file: image,
+          uri: image,
           type: 'image/png',
         },
       ],
@@ -227,7 +227,7 @@ export async function mintNftIx(
       category: 'image',
       files: [
         {
-          file: image,
+          uri: image,
           type: 'image/png',
         },
       ],
@@ -371,7 +371,7 @@ export async function mintNftIxTokenPayment(
       category: 'image',
       files: [
         {
-          file: image,
+          uri: image,
           type: 'image/png',
         },
       ],

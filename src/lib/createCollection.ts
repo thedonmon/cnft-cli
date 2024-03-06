@@ -67,7 +67,7 @@ export async function createCollection(
       category: 'image',
       files: [
         {
-          file: collectionImageUri,
+          uri: collectionImageUri,
           type: 'image/png',
         },
       ],
