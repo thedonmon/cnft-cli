@@ -10,6 +10,10 @@ import { clusterApiUrl } from '@solana/web3.js';
 import { extractSecret } from './helpers';
 import { extendLUT } from './manageLUT';
 import * as bs58 from 'bs58';
+import {
+  setComputeUnitLimit,
+  setComputeUnitPrice,
+} from '@metaplex-foundation/mpl-toolbox';
 
 /**
  * Create merkle tree for cNFTs
@@ -26,6 +30,8 @@ export async function createMerkleTree(
   lutAddress?: string,
   maxDepth: number = 14,
   maxBufferSize: number = 64,
+  canopyDepth?: number,
+  computeUnitPrice?: number,
 ) {
   const umi = createUmi(rpcUrl || clusterApiUrl('devnet'))
     .use(mplTokenMetadata())
@@ -36,12 +42,31 @@ export async function createMerkleTree(
   umi.use(signerIdentity(signer));
 
   const merkleTree = generateSigner(umi);
-  const builder = await createTree(umi, {
+  let builder = await createTree(umi, {
     merkleTree,
     maxDepth: maxDepth,
     maxBufferSize: maxBufferSize,
+    canopyDepth: canopyDepth,
   });
-  const res = await builder.sendAndConfirm(umi);
+  builder = builder.add(
+    setComputeUnitLimit(umi, {
+      units: 200_000,
+    }),
+  );
+
+  if (computeUnitPrice) {
+    builder = builder.add(
+      setComputeUnitPrice(umi, {
+        microLamports: computeUnitPrice,
+      }),
+    );
+  }
+
+  const res = await builder.sendAndConfirm(umi, {
+    send: {
+      skipPreflight: true,
+    },
+  });
   console.log('Merkle tree created: ', merkleTree.publicKey.toString());
   if (lutAddress) {
     await extendLUT(

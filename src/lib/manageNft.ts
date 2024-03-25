@@ -36,6 +36,7 @@ import {
 import {
   fetchAddressLookupTable,
   fetchAllTokenByOwnerAndMint,
+  setComputeUnitPrice,
   transferTokensChecked,
 } from '@metaplex-foundation/mpl-toolbox';
 import { loadWalletKey, toBuffer } from './helpers';
@@ -72,6 +73,7 @@ export async function mintNft(
   merkleTree: string,
   rpcUrl?: string,
   lutAddress?: string,
+  computeUnitPrice?: number,
 ) {
   if (!process.env.NFT_STORAGE_API_KEY) {
     throw new Error('NFT_STORAGE_API_KEY is not set');
@@ -149,6 +151,14 @@ export async function mintNft(
         }) ?? [],
     },
   });
+
+  if (computeUnitPrice) {
+    ix = ix.add(
+      setComputeUnitPrice(umi, {
+        microLamports: computeUnitPrice,
+      }),
+    );
+  }
 
   if (lutAddress) {
     const lut = await fetchAddressLookupTable(umi, publicKey(lutAddress));
@@ -449,6 +459,7 @@ export async function updateNft(
   collectionMint: string,
   lutAddress?: string,
   rpcUrl?: string,
+  computeUnitPrice?: number,
 ) {
   const umi = createUmi(rpcUrl || clusterApiUrl('devnet'))
     .use(mplTokenMetadata())
@@ -477,6 +488,13 @@ export async function updateNft(
       { publicKey: lut.publicKey, addresses: lut.addresses },
     ]);
     console.log('added lut to txn');
+  }
+  if (computeUnitPrice) {
+    ix = ix.add(
+      setComputeUnitPrice(umi, {
+        microLamports: computeUnitPrice,
+      }),
+    );
   }
   console.log(ix.fitsInOneTransaction(umi));
   const res = await ix.sendAndConfirm(umi, {
@@ -602,4 +620,26 @@ export async function fetchCnftByTreeAndLeaf(
     ? await getAssetWithProof(umi, publicKey(assetId))
     : await umi.rpc.getAsset(publicKey(assetId));
   return asset;
+}
+
+export async function uploadFile(filePath: string, rpcUrl?: string) {
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'))
+    .use(dasApi())
+    .use(nftStorageUploader({ token: process.env.NFT_STORAGE_API_KEY }));
+  const fileBuffer = fs.readFileSync(filePath);
+  const genericFile = createGenericFile(fileBuffer, filePath);
+  const [fileUri] = await umi.uploader.upload([genericFile]);
+  return fileUri;
+}
+
+export async function uploadFiles(filePaths: string[], rpcUrl?: string) {
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'))
+    .use(dasApi())
+    .use(nftStorageUploader({ token: process.env.NFT_STORAGE_API_KEY }));
+  const files = filePaths.map((filePath) => {
+    const fileBuffer = fs.readFileSync(filePath);
+    return createGenericFile(fileBuffer, filePath);
+  });
+  const fileUris = await umi.uploader.upload(files);
+  return fileUris;
 }

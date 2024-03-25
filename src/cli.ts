@@ -2,12 +2,14 @@ import chalk from 'chalk';
 import ora, { oraPromise } from 'ora';
 import { Command, Option } from '@commander-js/extra-typings';
 import * as fs from 'fs';
+import * as path from 'path';
 import { loadWalletKey, uiToNative, writeToFile } from './lib/helpers';
 import {
   createCnftLUT,
   createLUT,
   createLUTWithAddresses,
   extendLUT,
+  getLut,
 } from 'lib/manageLUT';
 import {
   CreateCollectionArgs,
@@ -26,6 +28,8 @@ import {
   mintNftIxTokenPayment,
   searchCnfts,
   updateNft,
+  uploadFile,
+  uploadFiles,
 } from 'lib/manageNft';
 import { TokenPayment } from 'types/tokenPayment';
 import {
@@ -37,6 +41,7 @@ import {
 } from '@solana/web3.js';
 import { getMint } from '@solana/spl-token';
 import { confirm } from '@inquirer/prompts';
+import { createNonce, fetchNonceInfo } from 'lib/createNonce';
 
 const error = chalk.bold.red;
 const success = chalk.bold.greenBright;
@@ -113,6 +118,17 @@ programCommand('extendLUT', { requireWallet: true })
     ora(`LUT extended at: ${magentaB(opts.lut)}`).succeed();
   });
 
+programCommand('fetchLUT', { requireWallet: false })
+  .description('Fetch an existing LUT')
+  .addOption(
+    new Option('-l, --lut <string>', 'LUT address').makeOptionMandatory(),
+  )
+  .action(async (opts) => {
+    const res = await getLut(opts.lut, opts.rpc);
+    console.log(res);
+    ora(`LUT extended at: ${magentaB(opts.lut)}`).succeed();
+  });
+
 programCommand('createCollection')
   .description('Create a new cNFT Collection')
   .addOption(new Option('-n, --name <string>', 'Collection name'))
@@ -126,6 +142,11 @@ programCommand('createCollection')
   .addOption(new Option('-i, --imagePath <string>', 'Image path'))
   .addOption(new Option('-ex, --externalUrl <string>', 'External URL'))
   .addOption(new Option('-l, --lut <string>', 'LUT address'))
+  .addOption(
+    new Option('-cp, --computePrice <number>', 'Compute unit price')
+      .argParser((val) => parseInt(val))
+      .default(1),
+  )
   .action(async (opts) => {
     const keypair = loadWalletKey(opts.keypair);
     const createCollectionArgs: CreateCollectionArgs = {
@@ -141,6 +162,7 @@ programCommand('createCollection')
       opts.imagePath,
       opts.rpc,
       opts.lut,
+      opts.computePrice,
     );
     ora(`Collection created at: ${magentaB(res.collectionMint)}`).succeed();
     writeToFile(res, `collection-${res.collectionMint}.json`, {
@@ -161,6 +183,17 @@ programCommand('createMerkleTree', { requireWallet: true })
       (val) => parseInt(val),
     ),
   )
+  .addOption(
+    new Option(
+      '-cd, --canopyDepth <number>',
+      'Canopy depth of the merkle tree',
+    ).argParser((val) => parseInt(val)),
+  )
+  .addOption(
+    new Option('-cp, --computePrice <number>', 'Compute unit price')
+      .argParser((val) => parseInt(val))
+      .default(1),
+  )
   .action(async (opts) => {
     const keypair = loadWalletKey(opts.keypair);
     const res = await createMerkleTree(
@@ -169,6 +202,8 @@ programCommand('createMerkleTree', { requireWallet: true })
       opts.lut,
       opts.maxDepth,
       opts.maxBuffer,
+      opts.canopyDepth,
+      opts.computePrice,
     );
     ora(
       `Merkle Tree created at: ${magentaB(res.merkleTreeAddress)}. Signature: ${success(res.signature)}`,
@@ -288,6 +323,11 @@ programCommand('updateNft', { requireWallet: true })
     new Option('-co, --collection <string>', 'Collection mint of the CNFT'),
   )
   .addOption(new Option('-l, --lut <string>', 'LUT address'))
+  .addOption(
+    new Option('-cp, --computePrice <number>', 'Compute unit price')
+      .argParser((val) => parseInt(val))
+      .default(1),
+  )
   .action(async (opts) => {
     const keypair = loadWalletKey(opts.keypair);
     const updateArgs: UpdateNftArgs = {
@@ -301,6 +341,7 @@ programCommand('updateNft', { requireWallet: true })
       opts.collection,
       opts.lut,
       opts.rpc,
+      opts.computePrice,
     );
     ora(`NFT updated!`).succeed();
     writeToFile(res, `nft-${opts.assetId}.json`, {
@@ -462,6 +503,62 @@ programCommand('search', { requireWallet: false })
         },
       );
       const fileName = `cnfts-search-${opts.collection && opts.owner ? `c-${opts.collection}-o${opts.owner}` : opts.collection ?? opts.owner}.json`;
+      writeToFile(res, fileName, { writeToFile: opts.log });
+    } catch (error) {
+      ora(`Error: ${error}`).fail();
+    }
+  });
+
+programCommand('upload', { requireWallet: false })
+  .description('Upload files to nftstorage')
+  .addOption(
+    new Option(
+      '-fp, --filePath <path>',
+      'File path to upload',
+    ).makeOptionMandatory(),
+  )
+  .addOption(new Option('-dir, --directory', `Is the path a directory`))
+  .action(async (opts) => {
+    try {
+      let filePaths = [opts.filePath];
+      if (opts.directory) {
+        filePaths = fs
+          .readdirSync(opts.filePath)
+          .map((file) => path.join(opts.filePath, file));
+      }
+      const res = await oraPromise(uploadFiles(filePaths, opts.rpc), {
+        text: `Uploading files...`,
+        spinner: 'binary',
+        successText: success(`Files uploaded!`),
+        failText: error(`Upload failed!`),
+      });
+      const fileName = `upload-${Date.now()}.json`;
+      writeToFile(res, fileName, { writeToFile: opts.log });
+    } catch (error) {
+      ora(`Error: ${error}`).fail();
+    }
+  });
+
+programCommand('createNonce', { requireWallet: true })
+  .description('Create a nonce account')
+  .action(async (opts) => {
+    try {
+      const keypair = loadWalletKey(opts.keypair);
+      const res = await createNonce(keypair.secretKey, opts.rpc);
+      const fileName = `nonce-${res}-${Date.now()}.json`;
+      writeToFile(res, fileName, { writeToFile: opts.log });
+    } catch (error) {
+      ora(`Error: ${error}`).fail();
+    }
+  });
+
+programCommand('fetchNonce', { requireWallet: false })
+  .description('Fetch a nonce account')
+  .addOption(new Option('-n, --nonce <string>', 'Nonce account address'))
+  .action(async (opts) => {
+    try {
+      const res = await fetchNonceInfo(opts.nonce, opts.rpc);
+      const fileName = `nonce-${res.nonce}-${Date.now()}.json`;
       writeToFile(res, fileName, { writeToFile: opts.log });
     } catch (error) {
       ora(`Error: ${error}`).fail();

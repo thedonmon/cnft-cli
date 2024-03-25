@@ -5,9 +5,11 @@ import {
 } from '@metaplex-foundation/mpl-bubblegum';
 import { MPL_TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 import {
+  SPL_COMPUTE_BUDGET_PROGRAM_ID,
   createEmptyLut,
   createLut,
   extendLut,
+  fetchAddressLookupTable,
   findAddressLookupTablePda,
 } from '@metaplex-foundation/mpl-toolbox';
 import {
@@ -100,6 +102,7 @@ export async function createCnftLUT(
     MPL_BUBBLEGUM_PROGRAM_ID,
     SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
     MPL_TOKEN_METADATA_PROGRAM_ID,
+    SPL_COMPUTE_BUDGET_PROGRAM_ID,
   ];
   return createLUTWithAddresses(keyPair, addresses, rpcUrl);
 }
@@ -152,4 +155,10 @@ export async function extendLUT(
   return {
     lutAddress: finalLut,
   };
+}
+
+export async function getLut(lut: string, rpcUrl?: string) {
+  const umi = createUmi(rpcUrl || clusterApiUrl('devnet'));
+  const lookUpTable = await fetchAddressLookupTable(umi, publicKey(lut));
+  return lookUpTable;
 }

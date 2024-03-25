@@ -930,7 +930,7 @@
 
 "@metaplex-foundation/mpl-bubblegum@^3.1.2":
   version "3.1.2"
-  resolved "https://registry.npmjs.org/@metaplex-foundation/mpl-bubblegum/-/mpl-bubblegum-3.1.2.tgz"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-bubblegum/-/mpl-bubblegum-3.1.2.tgz#e4de9b0750ab81db30cf8099b068e5379a167735"
   integrity sha512-ETqr+JYacIfx0jb8RYq9GXFy53/7mrtWTrRf6mZYzu0x4L8lpTgSw7Zrb8EFITvBequTGTHe93bR/xjLrZF17Q==
   dependencies:
     "@metaplex-foundation/digital-asset-standard-api" "^1.0.0-alpha.0"
@@ -946,21 +946,26 @@
   dependencies:
     "@metaplex-foundation/mpl-toolbox" "^0.9.0"
 
-"@metaplex-foundation/mpl-token-metadata@^3.2.0":
-  version "3.2.0"
-  resolved "https://registry.npmjs.org/@metaplex-foundation/mpl-token-metadata/-/mpl-token-metadata-3.2.0.tgz"
-  integrity sha512-IP+orxAIkQwSa9M+xsYi7IopV+/0od5rgXTxp0988cHeB0hR1RpXQT8RrcTH/PeOs/tPCU5HvU01NaavV9EEcw==
+"@metaplex-foundation/mpl-token-metadata@^3.2.1":
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-token-metadata/-/mpl-token-metadata-3.2.1.tgz#d424e378a1ee441a6431d2641d66873118d6dc67"
+  integrity sha512-26W1NhQwDWmLOg/pBRYut7x/vEs/5kFS2sWVEY5/X0f2jJOLhnd4NaZQcq+5u+XZsXvm1jq2AtrRGPNK43oqWQ==
   dependencies:
-    "@metaplex-foundation/mpl-toolbox" "^0.9.0"
+    "@metaplex-foundation/mpl-toolbox" "^0.9.4"
 
-"@metaplex-foundation/mpl-toolbox@^0.9.0", "@metaplex-foundation/mpl-toolbox@^0.9.2":
+"@metaplex-foundation/mpl-toolbox@^0.9.0":
   version "0.9.2"
   resolved "https://registry.npmjs.org/@metaplex-foundation/mpl-toolbox/-/mpl-toolbox-0.9.2.tgz"
   integrity sha512-fNOpWUobslv/zyhj4KHVx+773B43/75q7vCiiFOuTAWs46OQXmJL8sl72qwh36pi1aNpoQMCL/wNI3wPNyJsNw==
 
+"@metaplex-foundation/mpl-toolbox@^0.9.4":
+  version "0.9.4"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-toolbox/-/mpl-toolbox-0.9.4.tgz#2211b2f726b1e5745c03908d26fd8ee580838b6f"
+  integrity sha512-fd6JxfoLbj/MM8FG2x91KYVy1U6AjBQw4qjt7+Da3trzQaWnSaYHDcYRG/53xqfvZ9qofY1T2t53GXPlD87lnQ==
+
 "@metaplex-foundation/umi-bundle-defaults@^0.9.1":
   version "0.9.1"
-  resolved "https://registry.npmjs.org/@metaplex-foundation/umi-bundle-defaults/-/umi-bundle-defaults-0.9.1.tgz"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/umi-bundle-defaults/-/umi-bundle-defaults-0.9.1.tgz#2c43134e7ddaf25fdbcbb518d75136c6260bac82"
   integrity sha512-QBaCLrb2D5uhY6pbWdxGPdD3LNKOAZ/Wfp7gEzhAipWmEV75KO7ya3AzaU4JZPHaf9juwdU4wO50WEPRb7YyQg==
   dependencies:
     "@metaplex-foundation/umi-downloader-http" "^0.9.1"
@@ -1086,7 +1091,7 @@
 
 "@metaplex-foundation/umi@^0.9.1":
   version "0.9.1"
-  resolved "https://registry.npmjs.org/@metaplex-foundation/umi/-/umi-0.9.1.tgz"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/umi/-/umi-0.9.1.tgz#1eb581163f87f800bfa32fb58ce5cbe719d9d5b5"
   integrity sha512-IhHoOvp4vfO/++YL+78+iVuLM53+FDwUOZDYgH6lx0jYXyQ27BeaieeR5i+q3A9dz4KxQo5Nzc5aCA1109QGCQ==
   dependencies:
     "@metaplex-foundation/umi-options" "^0.8.9"

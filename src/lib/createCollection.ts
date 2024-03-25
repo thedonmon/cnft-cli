@@ -17,6 +17,10 @@ import { CreateCollectionArgs } from '../types/collection';
 import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 import { extendLUT } from './manageLUT';
+import {
+  setComputeUnitLimit,
+  setComputeUnitPrice,
+} from '@metaplex-foundation/mpl-toolbox';
 dotenv.config();
 
 /**
@@ -34,6 +38,7 @@ export async function createCollection(
   imageFilePath: string,
   rpcUrl?: string,
   lutAddress?: string,
+  computeUnitPrice?: number,
 ) {
   if (!process.env.NFT_STORAGE_API_KEY) {
     throw new Error('NFT_STORAGE_API_KEY is not set');
@@ -75,14 +80,27 @@ export async function createCollection(
   };
   const collectionJsonUri = await umi.uploader.uploadJson(collectionObject);
   const collectionMint = generateSigner(umi);
-  const res = await createNft(umi, {
+  let ix = createNft(umi, {
     mint: collectionMint,
     symbol: args.symbol,
     name: args.name,
     uri: collectionJsonUri,
     sellerFeeBasisPoints: percentAmount(args.sellerFeeBasisPoints),
     isCollection: true,
-  }).sendAndConfirm(umi);
+  }).add(
+    setComputeUnitLimit(umi, {
+      units: 600_000,
+    }),
+  );
+  if (computeUnitPrice) {
+    ix = ix.add(
+      setComputeUnitPrice(umi, {
+        microLamports: computeUnitPrice,
+      }),
+    );
+  }
+
+  const res = await ix.sendAndConfirm(umi);
   console.log('Collection created:', collectionMint.publicKey.toString());
 
   if (lutAddress) {
