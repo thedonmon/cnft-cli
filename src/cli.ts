@@ -23,6 +23,7 @@ import { createMerkleTree } from './lib/createMerkleTree';
 import {
   fetchCnftByAssetId,
   fetchCnftByTreeAndLeaf,
+  fetchCnftMinters,
   fetchCnftsByCollection,
   fetchCnftsByOwner,
   mintNftIxTokenPayment,
@@ -35,7 +36,11 @@ import { TokenPayment } from 'types/tokenPayment';
 import {
   Cluster,
   Connection,
+  Keypair,
   PublicKey,
+  SystemProgram,
+  Transaction,
+  TransactionMessage,
   VersionedTransaction,
   clusterApiUrl,
 } from '@solana/web3.js';
@@ -560,6 +565,39 @@ programCommand('fetchNonce', { requireWallet: false })
       const res = await fetchNonceInfo(opts.nonce, opts.rpc);
       const fileName = `nonce-${res.nonce}-${Date.now()}.json`;
       writeToFile(res, fileName, { writeToFile: opts.log });
+    } catch (error) {
+      ora(`Error: ${error}`).fail();
+    }
+  });
+
+programCommand('getCnftMinters', { requireWallet: false })
+  .description('Fetch minters of collection')
+  .addOption(
+    new Option(
+      '-c, --collection <string>',
+      'Collection address',
+    ).makeOptionMandatory(),
+  )
+  .addOption(new Option('-fl, --flatten', 'Only include addresses'))
+  .action(async (opts) => {
+    try {
+      if (!opts.rpc) {
+        ora(`Helius RPC URL is required!`).fail();
+        return;
+      }
+      const spinner = ora(
+        `Fetching minters for collection: ${opts.collection}...`,
+      ).start();
+      const res = await fetchCnftMinters(opts.collection, opts.rpc);
+      let minters:
+        | Array<{ minter: string; minted?: number; assets?: string[] }>
+        | string[] = res;
+      if (opts.flatten) {
+        minters = res.map((minter) => minter.minter);
+      }
+      spinner.succeed(`Minters fetched!`).stop();
+      const fileName = `minters-${opts.collection}-${Date.now()}.json`;
+      writeToFile(minters, fileName, { writeToFile: opts.log });
     } catch (error) {
       ora(`Error: ${error}`).fail();
     }

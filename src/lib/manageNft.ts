@@ -1,5 +1,6 @@
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import {
+  chunk,
   createGenericFile,
   createNoopSigner,
   createSignerFromKeypair,
@@ -47,7 +48,11 @@ import {
   toWeb3JsPublicKey,
 } from '@metaplex-foundation/umi-web3js-adapters';
 import { TokenPayment } from '../types/tokenPayment';
-import { fetchWithAutoPagination } from '../types/das';
+import {
+  fetchWithAutoPagination,
+  getEnrichedTransactions,
+  getSignaturesForAsset,
+} from '../types/das';
 import {
   SearchAssetsRpcInput,
   dasApi,
@@ -591,6 +596,78 @@ export async function searchCnfts(
     paginate,
   );
   return items;
+}
+
+export async function fetchCnftMinters(
+  collectionAddress: string,
+  rpcUrl: string,
+  paginate: boolean = true,
+  env: string = 'mainnet',
+) {
+  const url = new URL(rpcUrl);
+  const apiKey = url.searchParams.get('api-key');
+  if (!apiKey) {
+    throw new Error('API key is missing from the RPC URL');
+  }
+  if (!collectionAddress) {
+    throw new Error('CollectionAddress must be provided');
+  }
+  const allAssets = await fetchCnftsByCollection(collectionAddress, rpcUrl);
+  console.log('Assets fetched... ', allAssets.items.length);
+  const allAssetIds = allAssets.items.map((asset) => asset.id.toString());
+  const assetChunks = chunk(allAssetIds, 100);
+  const minters: Array<{
+    minter: string;
+    assets: string[];
+  }> = [];
+  //promise all to fetch all minters
+  let counter = 0;
+  for (const chunk of assetChunks) {
+    console.log('Fetching minters for chunk... ', counter, chunk.length);
+    const transactionChunks = await Promise.all(
+      chunk.map(async (assetId) => {
+        const signaturesChunk = await getSignaturesForAsset(
+          assetId,
+          rpcUrl,
+          paginate,
+        );
+        const mintToCollectionTransactions = signaturesChunk.items.filter(
+          ([_, type]) => type === 'MintToCollectionV1',
+        );
+        if (mintToCollectionTransactions.length < 1) {
+          return null;
+        }
+        return mintToCollectionTransactions[0][0];
+      }),
+    );
+    const foundTransactions = transactionChunks.filter((x) => x);
+    const enrichedTransactions = await getEnrichedTransactions(
+      apiKey,
+      env,
+      foundTransactions,
+    );
+    enrichedTransactions.forEach((transaction) => {
+      //Default to use feePayers as minters
+      if (transaction.events.compressed?.length > 0) {
+        const compressedEvent = transaction.events.compressed[0];
+        if (allAssetIds.includes(compressedEvent.assetId)) {
+          const minterIndex = minters.findIndex(
+            (m) => m.minter === transaction.feePayer,
+          );
+          if (minterIndex !== -1) {
+            minters[minterIndex].assets.push(compressedEvent.assetId);
+          } else {
+            minters.push({
+              minter: transaction.feePayer,
+              assets: [compressedEvent.assetId],
+            });
+          }
+        }
+      }
+    });
+    counter++;
+  }
+  return minters;
 }
 
 export async function fetchCnftByAssetId(

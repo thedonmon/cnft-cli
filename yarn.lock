@@ -914,14 +914,7 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@metaplex-foundation/digital-asset-standard-api@^1.0.0-alpha.0":
-  version "1.0.3"
-  resolved "https://registry.npmjs.org/@metaplex-foundation/digital-asset-standard-api/-/digital-asset-standard-api-1.0.3.tgz"
-  integrity sha512-uWrKF3lGfDt5KB1xV5BfPFQnbq4GvcNsN2/YYdgFW6+iNplhzXibbYjrZDFRv+WcE49U8JKbxK/yDW+Jc6K9Cw==
-  dependencies:
-    package.json "^2.0.1"
-
-"@metaplex-foundation/digital-asset-standard-api@^1.0.3":
+"@metaplex-foundation/digital-asset-standard-api@^1.0.0-alpha.0", "@metaplex-foundation/digital-asset-standard-api@^1.0.3":
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/@metaplex-foundation/digital-asset-standard-api/-/digital-asset-standard-api-1.0.3.tgz#194b656eb2c662e7a3bbcadeaf400daa5e341379"
   integrity sha512-uWrKF3lGfDt5KB1xV5BfPFQnbq4GvcNsN2/YYdgFW6+iNplhzXibbYjrZDFRv+WcE49U8JKbxK/yDW+Jc6K9Cw==
@@ -2901,6 +2894,11 @@ expect@^29.0.0, expect@^29.7.0:
     jest-matcher-utils "^29.7.0"
     jest-message-util "^29.7.0"
     jest-util "^29.7.0"
+
+exponential-backoff@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/exponential-backoff/-/exponential-backoff-3.1.1.tgz#64ac7526fe341ab18a39016cd22c787d01e00bf6"
+  integrity sha512-dX7e/LHVJ6W3DE1MHWi9S1EYzDESENfLrYohG2G++ovZrYOkm4Knwa0mc1cn84xJOR4KEU0WSchhLbd0UklbHw==
 
 external-editor@^3.1.0:
   version "3.1.0"

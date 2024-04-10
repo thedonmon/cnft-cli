@@ -4,6 +4,7 @@ import { BN } from '@project-serum/anchor';
 import * as bs58 from 'bs58';
 import * as fs from 'fs';
 import ora from 'ora';
+import { backOff } from 'exponential-backoff';
 export function extractSecret(keyPair: string | Uint8Array) {
   return typeof keyPair === 'string' ? bs58.decode(keyPair) : keyPair;
 }
@@ -100,4 +101,61 @@ export function estimateTransactionSize(
 ): number {
   const size = serializedTxn.length + 1 + signaturesLength * 64;
   return size;
+}
+
+export async function makePostRequest(url: string, body: any) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return await response.json();
+}
+
+export async function makeGetRequestWithBackoff(url: string) {
+  return await backOff(
+    async () => {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    },
+    {
+      numOfAttempts: 5, // Retry up to 5 times
+      startingDelay: 500, // Start with a 500 ms delay
+    },
+  );
+}
+
+export async function makePostRequestWithBackoff(
+  url: string,
+  body: any,
+  numOfAttempts: number = 5,
+  startingDelay: number = 500,
+) {
+  return await backOff(
+    async () => {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    },
+    {
+      numOfAttempts: numOfAttempts,
+      startingDelay: startingDelay,
+    },
+  );
 }
