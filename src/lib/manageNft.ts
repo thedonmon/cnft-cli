@@ -612,62 +612,67 @@ export async function fetchCnftMinters(
   if (!collectionAddress) {
     throw new Error('CollectionAddress must be provided');
   }
-  const allAssets = await fetchCnftsByCollection(collectionAddress, rpcUrl);
-  console.log('Assets fetched... ', allAssets.items.length);
-  const allAssetIds = allAssets.items.map((asset) => asset.id.toString());
-  const assetChunks = chunk(allAssetIds, 100);
-  const minters: Array<{
-    minter: string;
-    assets: string[];
-  }> = [];
-  //promise all to fetch all minters
-  let counter = 0;
-  for (const chunk of assetChunks) {
-    console.log('Fetching minters for chunk... ', counter, chunk.length);
-    const transactionChunks = await Promise.all(
-      chunk.map(async (assetId) => {
-        const signaturesChunk = await getSignaturesForAsset(
-          assetId,
-          rpcUrl,
-          paginate,
-        );
-        const mintToCollectionTransactions = signaturesChunk.items.filter(
-          ([_, type]) => type === 'MintToCollectionV1',
-        );
-        if (mintToCollectionTransactions.length < 1) {
-          return null;
-        }
-        return mintToCollectionTransactions[0][0];
-      }),
-    );
-    const foundTransactions = transactionChunks.filter((x) => x);
-    const enrichedTransactions = await getEnrichedTransactions(
-      apiKey,
-      env,
-      foundTransactions,
-    );
-    enrichedTransactions.forEach((transaction) => {
-      //Default to use feePayers as minters
-      if (transaction.events.compressed?.length > 0) {
-        const compressedEvent = transaction.events.compressed[0];
-        if (allAssetIds.includes(compressedEvent.assetId)) {
-          const minterIndex = minters.findIndex(
-            (m) => m.minter === transaction.feePayer,
+  try {
+    const allAssets = await fetchCnftsByCollection(collectionAddress, rpcUrl);
+    console.log('Assets fetched... ', allAssets.items.length);
+    const allAssetIds = allAssets.items.map((asset) => asset.id.toString());
+    const assetChunks = chunk(allAssetIds, 100);
+    const minters: Array<{
+      minter: string;
+      assets: string[];
+    }> = [];
+    //promise all to fetch all minters
+    let counter = 0;
+    for (const chunk of assetChunks) {
+      console.log('Fetching minters for chunk... ', counter, chunk.length);
+      const transactionChunks = await Promise.all(
+        chunk.map(async (assetId) => {
+          const signaturesChunk = await getSignaturesForAsset(
+            assetId,
+            rpcUrl,
+            paginate,
           );
-          if (minterIndex !== -1) {
-            minters[minterIndex].assets.push(compressedEvent.assetId);
-          } else {
-            minters.push({
-              minter: transaction.feePayer,
-              assets: [compressedEvent.assetId],
-            });
+          const mintToCollectionTransactions = signaturesChunk.items.filter(
+            ([_, type]) => type === 'MintToCollectionV1',
+          );
+          if (mintToCollectionTransactions.length < 1) {
+            return null;
+          }
+          return mintToCollectionTransactions[0][0];
+        }),
+      );
+      const foundTransactions = transactionChunks.filter((x) => x);
+      const enrichedTransactions = await getEnrichedTransactions(
+        apiKey,
+        env,
+        foundTransactions,
+      );
+      enrichedTransactions.forEach((transaction) => {
+        //Default to use feePayers as minters
+        if (transaction.events.compressed?.length > 0) {
+          const compressedEvent = transaction.events.compressed[0];
+          if (allAssetIds.includes(compressedEvent.assetId)) {
+            const minterIndex = minters.findIndex(
+              (m) => m.minter === transaction.feePayer,
+            );
+            if (minterIndex !== -1) {
+              minters[minterIndex].assets.push(compressedEvent.assetId);
+            } else {
+              minters.push({
+                minter: transaction.feePayer,
+                assets: [compressedEvent.assetId],
+              });
+            }
           }
         }
-      }
-    });
-    counter++;
+      });
+      counter++;
+    }
+    return minters;
+  } catch (error) {
+    console.error(error);
+    throw new Error(`Error fetching minters! ${error?.message || error}`);
   }
-  return minters;
 }
 
 export async function fetchCnftByAssetId(

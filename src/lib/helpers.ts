@@ -127,6 +127,8 @@ export async function makeGetRequestWithBackoff(url: string) {
       return await response.json();
     },
     {
+      jitter: 'full',
+      maxDelay: 10000, // Wait up to 10 seconds between retries
       numOfAttempts: 5, // Retry up to 5 times
       startingDelay: 500, // Start with a 500 ms delay
     },
@@ -154,8 +156,10 @@ export async function makePostRequestWithBackoff(
       return await response.json();
     },
     {
+      jitter: 'full',
       numOfAttempts: numOfAttempts,
       startingDelay: startingDelay,
+      maxDelay: 10000,
     },
   );
 }

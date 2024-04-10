@@ -1,4 +1,5 @@
 import { makePostRequestWithBackoff } from 'lib/helpers';
+import { backOff } from 'exponential-backoff';
 
 export type Nullable<T> = T | null;
 
@@ -161,6 +162,12 @@ export async function fetchWithAutoPagination<T, R>(
   params: T,
   paginate: boolean,
   pageLimit: number = 1000,
+  backoffOptions?: {
+    maxDelay?: number;
+    numOfAttempts?: number;
+    timeMultiple?: number;
+    startingDelay?: number;
+  },
 ): Promise<{ items: R[] }> {
   let allItems: R[] = [];
   let page = 1;
@@ -169,8 +176,17 @@ export async function fetchWithAutoPagination<T, R>(
 
   while (paginate && hasMore) {
     const modifiedParams = { ...params, page: page, limit: pageLimit } as T;
-    response = await fetchFunction(modifiedParams);
-
+    response = backoffOptions
+      ? await backOff(
+          async () => await fetchFunction(modifiedParams),
+          backoffOptions,
+        )
+      : await backOff(async () => await fetchFunction(modifiedParams), {
+          jitter: 'full',
+          maxDelay: 10000, // Wait up to 10 seconds between retries
+          numOfAttempts: 5, // Retry up to 5 times
+          timeMultiple: 2,
+        });
     allItems = [...allItems, ...response.items];
     hasMore = response.items.length === pageLimit;
     page++;
