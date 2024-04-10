@@ -490,6 +490,7 @@ programCommand('search', { requireWallet: false })
   )
   .option('--no-paginate', 'Do not paginate all results. Returns 1000 max.')
   .option('--no-compressed', 'Search non-compressed assets')
+  .option('--flatten', 'Only output asset addresses')
   .action(async (opts) => {
     try {
       const res = await oraPromise(
@@ -508,6 +509,11 @@ programCommand('search', { requireWallet: false })
         },
       );
       const fileName = `cnfts-search-${opts.collection && opts.owner ? `c-${opts.collection}-o${opts.owner}` : opts.collection ?? opts.owner}.json`;
+      if (opts.flatten) {
+        const addresses = res.map((asset) => asset.ownership.owner.toString());
+        writeToFile(addresses, fileName, { writeToFile: opts.log });
+        return;
+      }
       writeToFile(res, fileName, { writeToFile: opts.log });
     } catch (error) {
       ora(`Error: ${error}`).fail();
