@@ -601,6 +601,7 @@ export async function searchCnfts(
 export async function fetchCnftMinters(
   collectionAddress: string,
   rpcUrl: string,
+  fetchMode: string = 'sequential',
   paginate: boolean = true,
   env: string = 'mainnet',
 ) {
@@ -621,12 +622,34 @@ export async function fetchCnftMinters(
       minter: string;
       assets: string[];
     }> = [];
+    const missingTxn: string[] = [];
     //promise all to fetch all minters
     let counter = 0;
     for (const chunk of assetChunks) {
       console.log('Fetching minters for chunk... ', counter, chunk.length);
-      const transactionChunks = await Promise.all(
-        chunk.map(async (assetId) => {
+      let transactionChunks;
+      if (fetchMode === 'parallel') {
+        transactionChunks = await Promise.all(
+          chunk.map(async (assetId) => {
+            await new Promise((r) => setTimeout(r, 1000));
+            const signaturesChunk = await getSignaturesForAsset(
+              assetId,
+              rpcUrl,
+              paginate,
+            );
+            const mintToCollectionTransactions = signaturesChunk.items.filter(
+              ([_, type]) => type === 'MintToCollectionV1',
+            );
+            if (mintToCollectionTransactions.length < 1) {
+              missingTxn.push(assetId);
+              return null;
+            }
+            return mintToCollectionTransactions[0][0];
+          }),
+        );
+      } else if (fetchMode === 'sequential') {
+        transactionChunks = [];
+        for (const assetId of chunk) {
           const signaturesChunk = await getSignaturesForAsset(
             assetId,
             rpcUrl,
@@ -635,12 +658,14 @@ export async function fetchCnftMinters(
           const mintToCollectionTransactions = signaturesChunk.items.filter(
             ([_, type]) => type === 'MintToCollectionV1',
           );
-          if (mintToCollectionTransactions.length < 1) {
-            return null;
+          if (mintToCollectionTransactions.length > 0) {
+            transactionChunks.push(mintToCollectionTransactions[0][0]);
+          } else {
+            missingTxn.push(assetId);
+            transactionChunks.push(null);
           }
-          return mintToCollectionTransactions[0][0];
-        }),
-      );
+        }
+      }
       const foundTransactions = transactionChunks.filter((x) => x);
       const enrichedTransactions = await getEnrichedTransactions(
         apiKey,
@@ -668,7 +693,7 @@ export async function fetchCnftMinters(
       });
       counter++;
     }
-    return minters;
+    return { minters, missingTxn };
   } catch (error) {
     console.error(error);
     throw new Error(`Error fetching minters! ${error?.message || error}`);

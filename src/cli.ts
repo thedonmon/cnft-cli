@@ -29,18 +29,13 @@ import {
   mintNftIxTokenPayment,
   searchCnfts,
   updateNft,
-  uploadFile,
   uploadFiles,
 } from 'lib/manageNft';
 import { TokenPayment } from 'types/tokenPayment';
 import {
   Cluster,
   Connection,
-  Keypair,
   PublicKey,
-  SystemProgram,
-  Transaction,
-  TransactionMessage,
   VersionedTransaction,
   clusterApiUrl,
 } from '@solana/web3.js';
@@ -585,6 +580,12 @@ programCommand('getCnftMinters', { requireWallet: false })
     ).makeOptionMandatory(),
   )
   .addOption(new Option('-fl, --flatten', 'Only include addresses'))
+  .addOption(
+    new Option(
+      '-fm, --fetchParalell',
+      'fetch minters in paralell. Need premium helius plan to work',
+    ),
+  )
   .action(async (opts) => {
     try {
       if (!opts.rpc) {
@@ -594,15 +595,28 @@ programCommand('getCnftMinters', { requireWallet: false })
       const spinner = ora(
         `Fetching minters for collection: ${opts.collection}...`,
       ).start();
-      const res = await fetchCnftMinters(opts.collection, opts.rpc);
+      const res = await fetchCnftMinters(
+        opts.collection,
+        opts.rpc,
+        opts.fetchParalell ? 'parallel' : 'sequential',
+      );
       let minters:
         | Array<{ minter: string; minted?: number; assets?: string[] }>
-        | string[] = res;
+        | string[] = res.minters;
       if (opts.flatten) {
-        minters = res.map((minter) => minter.minter);
+        minters = res.minters.map((minter) => minter.minter);
       }
       spinner.succeed(`Minters fetched!`).stop();
       const fileName = `minters-${opts.collection}-${Date.now()}.json`;
+      if (res.missingTxn.length > 0) {
+        ora(
+          `Missing transactions for minters: ${res.missingTxn.length}`,
+        ).warn();
+        //write to file
+        writeToFile(res.missingTxn, `missingTxn-${opts.collection}.json`, {
+          writeToFile: opts.log,
+        });
+      }
       writeToFile(minters, fileName, { writeToFile: opts.log });
     } catch (error) {
       ora(`Error: ${error}`).fail();
