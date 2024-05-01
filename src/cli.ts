@@ -49,6 +49,16 @@ const warning = chalk.hex('#FFA500');
 const magentaB = chalk.magentaBright;
 const cliProgram = new Command();
 
+process.on('SIGINT', () => {
+  const spinner = ora(
+    warning('Received SIGINT. Gracefully shutting down...'),
+  ).start();
+  setTimeout(() => {
+    spinner.stop().info();
+    process.exit(0);
+  }, 1000);
+});
+
 cliProgram
   .name('cnft-cli')
   .description('CLI for CNFT Minting and Management')
